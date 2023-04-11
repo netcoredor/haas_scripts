@@ -30,7 +30,7 @@ esp32_ble_tracker:
 
 
 ble_client:
-  - mac_address: 78:21:84:3d:34:9a
+  - mac_address: AA:BB:CC:DD:EE:FF
     id: RADIOMON01
 
 switch:
