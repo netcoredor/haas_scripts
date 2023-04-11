@@ -1,0 +1,71 @@
+esphome:
+  name: "radmon01"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+globals:
+  - id: my_radon_float
+    type: float
+    restore_value: no
+
+
+logger:
+  level: DEBUG
+# Enable Home Assistant API
+api:
+  password: !secret wifi_password
+
+ota:
+  password: !secret wifi_password
+
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+esp32_ble_tracker:
+
+
+ble_client:
+  - mac_address: 78:21:84:3d:34:9a
+    id: RADIOMON01
+
+switch:
+  - platform: template
+    name: "RADIOMONITOR01"
+    turn_on_action:
+      - ble_client.ble_write:
+          id: RADIOMON01
+          service_uuid: "00001523-0000-1000-8000-00805F9B34FB"
+          characteristic_uuid: "00001524-0000-1000-8000-00805F9B34FB"
+          value: [0x50]
+    
+sensor:
+  - platform: ble_client
+    type: characteristic
+    ble_client_id: RADIOMON01
+    name: "Radon_level"
+    service_uuid: "00001523-0000-1000-8000-00805F9B34FB"
+    characteristic_uuid: "00001525-0000-1000-8000-00805F9B34FB"
+    accuracy_decimals: 2
+    notify: true
+    lambda: |-
+      union Convert { unsigned char byte[4]; float radondata; };
+      Convert convert;
+      convert.byte[0] = x[2];
+      convert.byte[1] = x[3];
+      convert.byte[2] = x[4];
+      convert.byte[3] = x[5];
+      float number = *((char*)(convert.byte));
+      float newconvert = number/37;
+      if (newconvert > 0.1) {
+          id(my_radon_float) = newconvert;
+          return id(my_radon_float);
+      }
+      else {
+          id(my_radon_float) = id(my_radon_float);
+          return id(my_radon_float);
+      }      
